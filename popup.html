@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Screenshot Master</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 320px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e4e6ed;
+      border-radius: 16px;
+      overflow: hidden;
+      user-select: none;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid #1e212a;
+      background: #13161e;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .header-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(108,92,231,0.3);
+    }
+    .header-title {
+      font-size: 16px; font-weight: 700;
+      background: linear-gradient(135deg, #fff, #b0b8d1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header-version { font-size: 10px; color: #5e647a; background: #1e212a; padding: 2px 10px; border-radius: 20px; }
+    .body { padding: 18px 20px 20px; }
+    .capture-btn {
+      width: 100%; padding: 14px 0;
+      border: none; border-radius: 14px;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(108,92,231,0.3);
+      transition: all 0.3s ease;
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px;
+    }
+    .capture-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(108,92,231,0.4); }
+    .capture-btn:active { transform: scale(0.98); }
+    .capture-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+    .spinner {
+      display: none;
+      width: 20px; height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .capture-btn.loading .spinner { display: block; }
+    .capture-btn.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .preview-section {
+      margin-top: 16px;
+      border-radius: 14px; overflow: hidden;
+      background: #141821;
+      border: 1px solid #212630;
+      transition: border 0.3s;
+    }
+    .preview-section.has-screenshot { border-color: #3b3f5a; }
+    .preview-placeholder {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 30px 20px; color: #3f455b; gap: 8px;
+    }
+    .preview-placeholder .big-icon { font-size: 42px; opacity: 0.3; }
+    .preview-placeholder .label { font-size: 13px; font-weight: 500; }
+    .preview-placeholder .sub { font-size: 11px; color: #2d3242; }
+    .preview-image-wrap { display: none; position: relative; }
+    .preview-section.has-screenshot .preview-image-wrap { display: block; }
+    .preview-section.has-screenshot .preview-placeholder { display: none; }
+    .preview-image-wrap img {
+      width: 100%; display: block;
+      max-height: 180px; object-fit: cover;
+      background: #0a0c12;
+    }
+    .preview-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 8px 14px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.7));
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: rgba(255,255,255,0.7);
+    }
+    .status {
+      margin-top: 14px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: #5e647a;
+      min-height: 20px; padding: 0 4px;
+    }
+    .status .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%; background: #2d3242;
+      flex-shrink: 0; transition: background 0.3s;
+    }
+    .status.success .dot { background: #6fcf97; }
+    .status.error .dot { background: #f28b82; }
+    .status.info .dot { background: #7a9cf5; }
+    .shortcut-hint {
+      margin-top: 14px;
+      text-align: center; font-size: 10px;
+      color: #2d3242;
+      border-top: 1px solid #1a1d26;
+      padding-top: 14px;
+    }
+    .shortcut-hint kbd {
+      background: #1a1d26; padding: 2px 8px;
+      border-radius: 4px; color: #5e647a;
+      border: 1px solid #252a36;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">📸</div>
+    <span class="header-title">Screenshot Master</span>
+  </div>
+  <span class="header-version">v2.0</span>
+</div>
+
+<div class="body">
+  <button class="capture-btn" id="captureBtn">
+    <span class="spinner"></span>
+    <span class="btn-text">🎯 Select area & capture</span>
+  </button>
+
+  <div class="preview-section" id="previewSection">
+    <div class="preview-placeholder">
+      <div class="big-icon">🖼</div>
+      <div class="label">No screenshot yet</div>
+      <div class="sub">Click the button and drag on the page</div>
+    </div>
+    <div class="preview-image-wrap">
+      <img id="previewImg" alt="Preview" />
+      <div class="preview-overlay">
+        <span id="previewFilename">screenshot.png</span>
+        <span class="file-size" id="previewSize">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="status" id="status">
+    <span class="dot"></span>
+    <span id="statusText">Ready</span>
+  </div>
+
+  <div class="shortcut-hint">
+    <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>  ·  saves to <kbd>Screenshots</kbd>
+  </div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
