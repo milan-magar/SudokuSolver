@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Screenshot Master",
+  "version": "2.0",
+  "description": "Capture a selected region of the page.",
+  "permissions": [
+    "activeTab",
+    "downloads",
+    "scripting",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icon128.png"
+    }
+  },
+  "commands": {
+    "capture-selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Select region and capture"
+    }
+  }
+}
