@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sudoku Solver</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            width: 420px;
+            min-height: 460px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            padding: 16px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a2a3a;
+            letter-spacing: -0.3px;
+        }
+        .header .badge {
+            background: #2d7aff;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 12px 0;
+            background: #2d7aff;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(45, 122, 255, 0.3);
+        }
+        .btn-primary:hover {
+            background: #1a5fd9;
+        }
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+        .btn-primary:disabled {
+            background: #8aa9e0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .btn-primary .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        .btn-primary.loading .spinner {
+            display: inline-block;
+        }
+        .btn-primary.loading .btn-text {
+            display: none;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ----- View containers ----- */
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: block;
+        }
+
+        /* ----- Screenshot view (original) ----- */
+        .image-section {
+            margin-top: 16px;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid #e6edf4;
+            overflow: hidden;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: min-height 0.3s;
+        }
+        .image-section .placeholder {
+            color: #8899aa;
+            font-size: 13px;
+            padding: 40px 20px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .image-section .placeholder .icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .image-section img {
+            width: 100%;
+            display: block;
+            max-height: 320px;
+            object-fit: contain;
+        }
+        .image-section .status-msg {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.72);
+            color: #fff;
+            font-size: 12px;
+            padding: 4px 14px;
+            border-radius: 20px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .image-section .status-msg.visible {
+            opacity: 1;
+        }
+
+        /* ----- Grid view (Sudoku) ----- */
+        .grid-wrapper {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .sudoku-grid {
+            border-collapse: collapse;
+            border: 3px solid #1a2a3a;
+            background: #fff;
+        }
+        .sudoku-grid td {
+            border: 1px solid #b0c4de;
+            width: 36px;
+            height: 36px;
+            text-align: center;
+            vertical-align: middle;
+            padding: 0;
+        }
+        .sudoku-grid td input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+            font-family: inherit;
+            background: transparent;
+            color: #1a2a3a;
+            padding: 0;
+            caret-color: #2d7aff;
+        }
+        .sudoku-grid td input:focus {
+            background: #e8f0fe;
+        }
+        .sudoku-grid td input::selection {
+            background: #b3d4fc;
+        }
+        /* Thick borders for 3x3 boxes */
+        .sudoku-grid .box-border-right {
+            border-right: 3px solid #1a2a3a;
+        }
+        .sudoku-grid .box-border-bottom {
+            border-bottom: 3px solid #1a2a3a;
+        }
+
+        .grid-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+            width: 100%;
+        }
+        .grid-controls button {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-back {
+            background: #e2e8f0;
+            color: #1a2a3a;
+        }
+        .btn-back:hover {
+            background: #cbd5e1;
+        }
+        .btn-next-placeholder {
+            background: #2d7aff;
+            color: #fff;
+        }
+        .btn-next-placeholder:hover {
+            background: #1a5fd9;
+        }
+        .btn-next-placeholder:disabled {
+            background: #8aa9e0;
+            cursor: not-allowed;
+        }
+
+        /* Status bar (common) */
+        .status-bar {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #667e99;
+        }
+        .status-bar .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .status-bar .dot.online {
+            background: #22c55e;
+        }
+        .status-bar .dot.offline {
+            background: #ef4444;
+        }
+        .status-bar .server-status {
+            display: flex;
+            align-items: center;
+        }
+        .status-bar .hint {
+            font-size: 11px;
+            color: #99aec6;
+        }
+
+        .footer-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .footer-actions button {
+            flex: 1;
+            padding: 8px 0;
+            border: 1px solid #dce4ed;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 12px;
+            font-weight: 500;
+            color: #3d5368;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .footer-actions button:hover {
+            background: #f0f4f9;
+        }
+        .footer-actions button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🧩 Sudoku Solver</h1>
+        <span class="badge">v1.0</span>
+    </div>
+
+    <!-- ========== VIEW 1: SCREENSHOT ========== -->
+    <div id="screenshotView" class="view active">
+        <button class="btn-primary" id="selectAreaBtn">
+            <span class="spinner"></span>
+            <span class="btn-text">📐 Select Area</span>
+        </button>
+
+        <div class="image-section" id="imageSection">
+            <div class="placeholder" id="placeholder">
+                <span class="icon">🖼️</span>
+                No image captured yet.<br />
+                Click <strong>"Select Area"</strong> to capture a Sudoku puzzle.
+            </div>
+            <img id="previewImg" style="display:none;" alt="Sudoku preview" />
+            <div class="status-msg" id="statusMsg"></div>
+        </div>
+
+        <!-- Next button that triggers extraction and switches to grid view -->
+        <div class="next-wrapper" style="margin-top:14px;">
+            <button class="btn-primary" id="nextBtn" style="box-shadow: none; background: #22c55e;">
+                <span class="btn-text">▶ Next</span>
+            </button>
+        </div>
+
+        <!-- Status & footer actions (same for both views, but placed here) -->
+        <div class="status-bar">
+            <span class="server-status">
+                <span class="dot offline" id="serverDot"></span>
+                <span id="serverLabel">Server: checking…</span>
+            </span>
+            <span class="hint">sudoku.png</span>
+        </div>
+
+        <div class="footer-actions">
+            <button id="refreshBtn">🔄 Refresh</button>
+            <button id="openFolderBtn">📂 Open Folder</button>
+        </div>
+    </div>
+
+    <!-- ========== VIEW 2: SUDOKU GRID ========== -->
+    <div id="gridView" class="view">
+        <div class="grid-wrapper">
+            <table class="sudoku-grid" id="sudokuGrid"></table>
+
+            <div class="grid-controls">
+                <button class="btn-back" id="backBtn">← Back</button>
+                <button class="btn-next-placeholder" id="nextPlaceholderBtn">Next ➔</button>
+            </div>
+        </div>
+
+        <!-- Reuse same status & footer actions for consistency -->
+        <div class="status-bar" style="margin-top:14px;">
+            <span class="server-status">
+                <span class="dot offline" id="serverDot2"></span>
+                <span id="serverLabel2">Server: checking…</span>
+            </span>
+            <span class="hint">sudoku.png</span>
+        </div>
+        <div class="footer-actions">
+            <button id="refreshBtn2">🔄 Refresh</button>
+            <button id="openFolderBtn2">📂 Open Folder</button>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
