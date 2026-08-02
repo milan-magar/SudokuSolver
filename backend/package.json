@@ -1,0 +1,17 @@
+{
+  "name": "sudoku-solver-server",
+  "version": "1.0.0",
+  "description": "Local server for Sudoku Solver Chrome extension",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "canvas": "^3.2.3",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "tesseract.js": "^7.0.0"
+  },
+  "author": "",
+  "license": "MIT"
+}
